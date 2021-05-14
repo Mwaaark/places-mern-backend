@@ -36,7 +36,6 @@ const getPlaceById = async (req, res, next) => {
 const getPlacesByUserId = async (req, res, next) => {
   const userId = req.params.uid;
 
-  // let places;
   let userWithPlaces;
   try {
     userWithPlaces = await User.findById(userId).populate("places");
@@ -48,7 +47,6 @@ const getPlacesByUserId = async (req, res, next) => {
     return next(error);
   }
 
-  // if(!places || places.length === 0)
   if (!userWithPlaces || userWithPlaces.places.length === 0) {
     return next(
       new HttpError("Could not find places for the provided user id.", 404)
@@ -104,11 +102,11 @@ const createPlace = async (req, res, next) => {
   try {
     const sess = await mongoose.startSession();
     sess.startTransaction();
-    // await createdPlace.save({ session: sess });
-    await createdPlace.save();
+    await createdPlace.save({ session: sess });
+    // await createdPlace.save();
     user.places.push(createdPlace);
-    // await user.save({ session: sess });
-    await user.save();
+    await user.save({ session: sess });
+    // await user.save();
     await sess.commitTransaction();
   } catch (err) {
     const error = new HttpError(
@@ -143,7 +141,6 @@ const updatePlace = async (req, res, next) => {
     return next(error);
   }
 
-  // if (!place.creator.equals(req.userData.userId)) {
   if (place.creator.toString() !== req.userData.userId) {
     const error = new HttpError("You are not allowed to edit this place.", 401);
     return next(error);
@@ -197,12 +194,12 @@ const deletePlace = async (req, res, next) => {
   try {
     const sess = await mongoose.startSession();
     sess.startTransaction();
-    // await place.remove({ session: sess });
-    await place.remove();
+    await place.remove({ session: sess });
+    // await place.remove();
     place.creator.places.pull(place);
-    // await place.creator.save({ session: sess });
+    await place.creator.save({ session: sess });
+    // await place.creator.save();
     await sess.commitTransaction();
-    await place.creator.save();
   } catch (err) {
     const error = new HttpError(
       "Something went wrong, could not delete place.",

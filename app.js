@@ -11,7 +11,6 @@ const HttpError = require("./models/http-error");
 const dbUrl =
   `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.l6oip.mongodb.net/${process.env.DB_NAME}?retryWrites=true&w=majority` ||
   "mongodb://localhost:27017/places-mern";
-// const dbUrl = "mongodb://localhost:27017/places-mern";
 
 mongoose
   .connect(dbUrl, { useNewUrlParser: true, useUnifiedTopology: true })
@@ -24,7 +23,6 @@ mongoose
 
 const app = express();
 
-// parse req.body(raw - JSON data) to something JS can understand
 app.use(express.json());
 
 app.use("/uploads/images", express.static(path.join("uploads", "images")));
