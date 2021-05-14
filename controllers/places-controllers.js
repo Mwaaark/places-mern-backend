@@ -1,3 +1,5 @@
+const fs = require("fs");
+
 const { validationResult } = require("express-validator");
 const mongoose = require("mongoose");
 
@@ -68,7 +70,7 @@ const createPlace = async (req, res, next) => {
     );
   }
 
-  const { title, description, address, creator } = req.body;
+  const { title, description, address } = req.body;
 
   let coordinates;
   try {
@@ -82,14 +84,13 @@ const createPlace = async (req, res, next) => {
     description,
     address,
     location: coordinates,
-    image:
-      "https://images.unsplash.com/photo-1591506578484-d496b18a6908?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=750&q=80",
-    creator,
+    image: req.file.path,
+    creator: req.userData.userId,
   });
 
   let user;
   try {
-    user = await User.findById(creator);
+    user = await User.findById(req.userData.userId);
   } catch (err) {
     const error = new HttpError("Creating place failed, please try again", 500);
     return next(error);
@@ -99,8 +100,6 @@ const createPlace = async (req, res, next) => {
     const error = new HttpError("Could not find user for provided id", 404);
     return next(error);
   }
-
-  // console.log(user);
 
   try {
     const sess = await mongoose.startSession();
@@ -144,6 +143,12 @@ const updatePlace = async (req, res, next) => {
     return next(error);
   }
 
+  // if (!place.creator.equals(req.userData.userId)) {
+  if (place.creator.toString() !== req.userData.userId) {
+    const error = new HttpError("You are not allowed to edit this place.", 401);
+    return next(error);
+  }
+
   place.title = title;
   place.description = description;
 
@@ -179,6 +184,16 @@ const deletePlace = async (req, res, next) => {
     return next(error);
   }
 
+  if (place.creator.id !== req.userData.userId) {
+    const error = new HttpError(
+      "You are not allowed to delete this place.",
+      401
+    );
+    return next(error);
+  }
+
+  const imagePath = place.image;
+
   try {
     const sess = await mongoose.startSession();
     sess.startTransaction();
@@ -195,6 +210,10 @@ const deletePlace = async (req, res, next) => {
     );
     return next(error);
   }
+
+  fs.unlink(imagePath, (err) => {
+    console.log(err);
+  });
 
   res.status(200).json({ message: "Deleted place." });
 };
